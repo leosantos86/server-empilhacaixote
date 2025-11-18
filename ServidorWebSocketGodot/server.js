@@ -17,16 +17,21 @@ const roomOtherColors = new Map();  // roomId → otherColor (cor do segundo jog
 const express = require("express");
 const WebSocket = require("ws");
 const { v4: uuidv4 } = require("uuid");
+const https = require("https");
+const fs = require("fs");
+const credentials = {
+  key: fs.readFileSync('key.pem'),
+  cert: fs.readFileSync('cert.pem')
+};
 
 // ========================================
 // CONFIGURAÇÃO DO SERVIDOR
 // ========================================
 const app = express();
 const PORT = process.env.PORT || 9090;
-const server = app.listen(PORT, () => {
-    console.log(`✓ Servidor iniciado na porta: ${PORT}`);
-});
+const server = https.createServer(credentials, app);
 const wss = new WebSocket.Server({ server });
+
 
 // ========================================
 // CONSTANTES
@@ -775,3 +780,10 @@ console.log("  - reduce_opponent_time");
 console.log("  - block_column");
 console.log("  - unblock_column");
 console.log("=====================================\n");
+
+
+
+// Inicia o servidor HTTPS/WSS
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Servidor rodando HTTPS/WSS na porta ${PORT}`);
+});
