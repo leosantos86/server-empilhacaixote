@@ -20,12 +20,17 @@ const { v4: uuidv4 } = require("uuid");
 const https = require("https");
 const fs = require("fs");
 
+//const credentials = {
+//	key: fs.readFileSync("./key.pem"),
+//	cert: fs.readFileSync("./cert.pem"),
+//};
+
 // ========================================
 // CONFIGURAÇÃO DO SERVIDOR
 // ========================================
 const app = express();
 const PORT = process.env.PORT || 9090;
-const server = https.createServer(app);
+const server = https.createServer(/*credentials*/ app);
 const wss = new WebSocket.Server({ server });
 
 // ========================================
@@ -575,6 +580,7 @@ wss.on("connection", (socket) => {
 				// Quando há 2 jogadores, começa o jogo
 				if (Object.keys(roomToJoin.players).length === 2) {
 					console.log(`[Jogo] Iniciando em ${roomCode}`);
+					// Inicia timer do primeiro jogador
 					for (const clientUuid in roomToJoin.players) {
 						const client = roomToJoin.players[clientUuid];
 						if (client.readyState === WebSocket.OPEN) {
@@ -759,7 +765,6 @@ wss.on("connection", (socket) => {
 				boards.set(socket.roomId, clearLastLine(board));
 				broadcastBoardUpdate(socket.roomId, boards.get(socket.roomId));
 				console.log(`[Poder] Linha removida em ${socket.roomId}`);
-				console.log(board);
 				break;
 			}
 
@@ -778,20 +783,11 @@ wss.on("connection", (socket) => {
 				break;
 			}
 
-			case "block_column": {
-				const col = data.content.col;
-				blockColumn(socket.roomId, col);
-
-				if (room) {
-					for (const clientUuid in room.players) {
-						room.players[clientUuid].send(
-							JSON.stringify({
-								cmd: "column_blocked_notify",
-								content: { col },
-							})
-						);
-					}
-				}
+			case "clear_bottom_line": {
+				boards.set(socket.roomId, clearLastLine(board));
+				broadcastBoardUpdate(socket.roomId, boards.get(socket.roomId));
+				console.log(`[Poder] Linha removida em ${socket.roomId}`);
+				console.log(board);
 				break;
 			}
 
