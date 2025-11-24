@@ -9,52 +9,44 @@ import { swaggerSpec } from "./docs/swagger";
 import { setupWebSocket } from "./websocket";
 import authRoutes from "./modules/auth/auth.routes";
 import walletRoutes from "./modules/wallet/wallet.routes";
-import shopRouter  from "./modules/shop/shop.routes";
+import shopRouter from "./modules/shop/shop.routes";
 
-const PORT = process.env.SERVER_PORT || "8080";
+// **CORREÇÃO:** Render.com usa process.env.PORT
+const PORT = process.env.PORT || "8080";
 
 const app: Express = express();
 const server = http.createServer(app);
 
 const corsConfig = {
-  origin: "*",
-  credentials: false,
+	origin: "*",
+	credentials: false,
 };
 
-app
-  .use(cors(corsConfig))
-  .use(express.json())
-  .use(express.urlencoded({ extended: false }))
-  .use((req: Request, _: Response, next) => {
-    console.log(req.path, req.method);
-    next();
-  });
+app.use(cors(corsConfig))
+	.use(express.json())
+	.use(express.urlencoded({ extended: false }))
+	.use((req: Request, _: Response, next) => {
+		console.log(req.path, req.method);
+		next();
+	});
 
-//Routes
+// Routes
 app.get("/", (_: Request, res: Response) => {
-  res.send({ message: "hello world!" });
+	res.send({ message: "hello world!" });
 });
-app.use(
-  "/api-docs",
-  swaggerUi.serve,
-  swaggerUi.setup(swaggerSpec(PORT))
-);
+
+// Swagger docs
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+// Outros routers
 app.use("/auth", authRoutes);
 app.use("/wallet", walletRoutes);
 app.use("/shop", shopRouter);
-app.use((_: Request, res: Response) => {
-  res.status(404).send({ message: "page not found" });
-});
 
-//WS
-
+// WebSocket setup (Render sempre expõe como WSS!)
 setupWebSocket(server);
 
+// **CORREÇÃO:** Listen na porta correta para Render.com
 server.listen(PORT, () => {
-  console.log(
-    "[Server] Ready > The server is running on 0.0.0.0:" +
-      PORT +
-      ", url: http://localhost:" +
-      PORT,
-  );
+	console.log(`[Server] Ready > The server is running on 0.0.0.0:${PORT}`);
 });
